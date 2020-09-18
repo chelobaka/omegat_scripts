@@ -269,7 +269,7 @@ updInstPlugs = {
                     def foundPath = foundJar.getAbsoluteFile().getParent()
                     def foundBaseName = foundJar.getName()
                     if ((Files.isWritable(instDir.toPath()))) {
-                        if (foundBaseName <= baseName) {
+                        if (foundBaseName < baseName) {
                             if (foundPath != instDir.toString()) {
                                 new File(foundPath).deleteDir()
                             } else {
