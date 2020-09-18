@@ -311,8 +311,8 @@ updInstPlugs = {
                     } else {
                         readOnlyJars += "    " + foundJar.toString() + "\n"
                         finReadOnlyJars += "<html><center><u>" + foundJar.toString() + "</u></center></html>\n"
-                        nonInstallJars += bundleJar.toString() + "\n"
-                        nonInstallNames += "  " + libName + "\n"
+                        //nonInstallJars += bundleJar.toString() + "\n"
+                        //nonInstallNames += "  " + libName + "\n"
                     }
                 }
             }
