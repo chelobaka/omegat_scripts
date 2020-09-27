@@ -21,6 +21,8 @@ autoLaunch = false // true for <application_startup> folder, false for the regul
 removeExtraPlugins = true // true if the script should try to remove jar files in <install_folder>/plugins
 deletePlugVerbose = true // true to list the plugins in the read-only folder which the script couldn't remove
 
+
+import groovy.io.FileType
 import org.omegat.core.events.IApplicationEventListener
 
 import groovy.swing.SwingBuilder
@@ -32,6 +34,7 @@ import java.awt.FlowLayout
 import java.awt.GridBagConstraints as GBC
 import java.awt.GridBagLayout as GBL
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.zip.ZipFile
 import javax.swing.JLabel
@@ -254,70 +257,65 @@ delDir = {
     }
 }
 
-updInstPlugs = {
-    tmpDir, instDir ->
-    new File(tmpDir.toString()).eachFileRecurse(groovy.io.FileType.FILES) {
-        installCount = 0
-        if (it.name.endsWith(".jar")) {
-            def bundleJar = it
-            def baseName = bundleJar.getName()
-            def jarPath = bundleJar.getAbsoluteFile().getParent()
-            def libName = baseName.minus(~/-\d+.*\.jar$/)
-            new File(instDir.toString()).eachFileRecurse(groovy.io.FileType.FILES) {
-                if (it.name.contains(libName) && it.name.endsWith(".jar")) {
-                    def foundJar = it
-                    def foundPath = foundJar.getAbsoluteFile().getParent()
-                    def foundBaseName = foundJar.getName()
-                    if ((Files.isWritable(instDir.toPath()))) {
-                        if (foundBaseName < baseName) {
-                            if (foundPath != instDir.toString()) {
-                                new File(foundPath).deleteDir()
-                            } else {
-                                switch (osType) {
-                                    case [OsType.WIN64, OsType.WIN32]:
-                                        deleteJars += "    del " + "\"" + foundJar.toString() + "\"" + "\n"
-                                        success++
-                                        winDel = true
-                                        break
-                                    case [OsType.MAC64, OsType.MAC32]:
-                                        foundJar.delete()
-                                        success++
-                                        break
-                                    default:
-                                        foundJar.delete()
-                                        success++
-                                        break
-                                }
-                            }
-                            if (jarPath != tmpDir.toString()) {
-                                def plugSubDir = instDir.toString() + File.separator + new File(jarPath).getName()
-                                delDir(new File(plugSubDir))
-                                if (installCount < 1) {
-                                    FileUtils.moveDirectoryToDirectory(new File(jarPath), instDir, true)
-                                    installCount++
-                                }
-                            } else {
-                                if (installCount < 1) {
-                                    FileUtils.moveFileToDirectory(bundleJar, instDir, true)
-                                    installCount++
-                                }
-                            }
-                        } else {
-                            if (bundleJar.exists()) {
-                                bundleJar.delete()
-                                installCount++
-                            }
-                        }
-                    } else {
-                        readOnlyJars += "    " + foundJar.toString() + "\n"
-                        finReadOnlyJars += "<html><center><u>" + foundJar.toString() + "</u></center></html>\n"
-                        //nonInstallJars += bundleJar.toString() + "\n"
-                        //nonInstallNames += "  " + libName + "\n"
-                    }
-                }
-            }
+/**
+ * Upgrade plugins in installDir from tmpDir
+ */
+upgradePlugings = { File tmpDir, File installDir ->
+
+    def deleteList = []
+    def installList = []
+
+    // Go over new plugin files
+    new File(tmpDir.toString()).eachFileRecurse(FileType.FILES) { File np ->
+
+        if (!np.name.endsWith(".jar")) {
+            return
         }
+
+        def pluginFile = np
+        def pluginFileName = pluginFile.getName()
+        def pluginName = pluginFileName - ~/-\d+.*\.jar$/
+        def include_pattern = pluginName + '-*.jar'
+        def localCopyExists = false
+
+        new FileNameFinder().getFileNames(installDir.toString(), include_pattern).forEach({ lp ->
+            println(lp)
+            def lpFile = new File(lp)
+            if (lpFile.getName() == pluginFileName) {
+                localCopyExists = true
+            } else {
+                deleteList.add(lpFile)
+            }
+        })
+
+        if (!localCopyExists) {
+            installList.add(np)
+        }
+
     }
+
+    // Delete unwanted plugin files
+    new HashSet(deleteList).forEach( { File f ->
+        switch (osType) {
+            case [OsType.WIN64, OsType.WIN32]:
+                deleteJars += "    del " + "\"" + f.toString() + "\"" + "\n"
+                winDel = true
+                break
+            default:
+                f.delete()
+        }
+    })
+
+    // Install new plugins
+    installList.forEach({ File f ->
+        def relPath = tmpDir.toPath().relativize(f.toPath())
+        def newFile = installDir.toPath().resolve(relPath).toFile()
+        newFile.mkdirs()
+        FileUtils.moveFile(f, newFile)
+    })
+
+    // Recursively delete temporary directory
+    FileUtils.deleteDirectory(tmpDir)
 }
 
 printSep = {
@@ -750,25 +748,12 @@ The newer versions of these files will be installed into user's configuration fo
         if (! confPlugDir.exists()) {
             confPlugDir.mkdirs()
         }
-        updInstPlugs(tmpPluginsDir, confPlugDir)
-        if (tmpPluginsDir.exists()) {
-            tmpPluginsDir.listFiles().each {
-                try {
-                    if (it.isDirectory()) {
-                        def subfiles = it.listFiles()
-                        if (it.directorySize() == 0) {
-                            it.deleteDir()
-                        }
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace()
-                }
-            }
-        }
-        FileUtils.copyDirectory(tmpPluginsDir, confPlugDir, true)
+
+        upgradePlugings(tmpPluginsDir, confPlugDir)
+
         finalMsg += "\nYour plugins have been updated."
         frameProgress.setText("Plugins updated.")
-        delDir(tmpPluginsDir)
+
         printDone()
         printSep()
     }
