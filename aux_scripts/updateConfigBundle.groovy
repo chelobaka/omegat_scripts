@@ -285,7 +285,6 @@ upgradePlugings = { File tmpDir, File installDir ->
         def localCopyExists = false
 
         new FileNameFinder().getFileNames(installDir.toString(), include_pattern).forEach({ lp ->
-            println(lp)
             def lpFile = new File(lp)
             if (lpFile.getName() == pluginFileName) {
                 localCopyExists = true
