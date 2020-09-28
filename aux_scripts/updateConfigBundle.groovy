@@ -278,8 +278,7 @@ upgradePlugings = { File tmpDir, File installDir ->
             return
         }
 
-        def pluginFile = np
-        def pluginFileName = pluginFile.getName()
+        def pluginFileName = np.getName()
         def pluginName = pluginFileName - ~/-\d+.*\.jar$/
         def include_pattern = pluginName + '-*.jar'
         def localCopyExists = false
