@@ -2,8 +2,10 @@
  *  Update OmegaT customisation from a remote repository
  * 
  * @author:  Kos Ivantsov
- * @date:    2020-07-18
- * @version: 0.4.9
+ * @date:    2020-09-27
+ * @review:  Lev Abashkin
+ * @version: 0.5.1
+ * 
  */
 
 /*
@@ -13,6 +15,10 @@
  * 
  * DOCUMENTATION: 
  *          https://github.com/kosivantsov/omegat_scripts/tree/master/aux_scripts#customization-script-updateconfigbundlegroovy
+ *
+ * CHANGES:
+ *          0.5.0: bug fixes by Lev
+ *          0.5.1: more bug fixes by Lev
  *
  */
 
