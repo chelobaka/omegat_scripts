@@ -266,7 +266,7 @@ delDir = {
 /**
  * Upgrade plugins in installDir from tmpDir
  */
-upgradePlugings = { File tmpDir, File installDir ->
+upgradePlugins = { File tmpDir, File installDir ->
 
     def deleteList = []
     def installList = []
@@ -753,7 +753,7 @@ The newer versions of these files will be installed into user's configuration fo
             confPlugDir.mkdirs()
         }
 
-        upgradePlugings(tmpPluginsDir, confPlugDir)
+        upgradePlugins(tmpPluginsDir, confPlugDir)
 
         finalMsg += "\nYour plugins have been updated."
         frameProgress.setText("Plugins updated.")
