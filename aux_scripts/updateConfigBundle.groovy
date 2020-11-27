@@ -4,7 +4,7 @@
  * @author:  Kos Ivantsov
  * @date:    2020-09-27
  * @review:  Lev Abashkin
- * @version: 0.5.1
+ * @version: 0.5.2
  * 
  */
 
@@ -314,7 +314,7 @@ upgradePlugings = { File tmpDir, File installDir ->
     installList.forEach({ File f ->
         def relPath = tmpDir.toPath().relativize(f.toPath())
         def newFile = installDir.toPath().resolve(relPath).toFile()
-        newFile.mkdirs()
+        newFile.getParentFile().mkdirs()
         FileUtils.moveFile(f, newFile)
     })
 
