@@ -1,29 +1,32 @@
 /* :name = Update Customisation Bundle :description =
  *  Update OmegaT customisation from a remote repository
- * 
+ *
  * @author:  Kos Ivantsov
  * @date:    2020-09-27
  * @review:  Lev Abashkin
- * @version: 0.5.2
- * 
+ * @review:  Manuel Souto Pico
+ * @version: 0.5.3
+ *
  */
 
 /*
- * INFO:    In Windows installations the user configuration folder is accessible from OmegaT from menu 
- *          *Options > User Configuration Folder*. Normally it will also be the same path that shortcut 
+ * INFO:    In Windows installations the user configuration folder is accessible from OmegaT from menu
+ *          *Options > User Configuration Folder*. Normally it will also be the same path that shortcut
  *          `%appdata%/OmegaT` leads to, which is `C:\Users\souto\AppData\Roaming\OmegaT`.
- * 
- * DOCUMENTATION: 
+ *
+ * DOCUMENTATION:
  *          https://github.com/kosivantsov/omegat_scripts/tree/master/aux_scripts#customization-script-updateconfigbundlegroovy
  *
  * CHANGES:
  *          0.5.0: bug fixes by Lev
  *          0.5.1: more bug fixes by Lev
+ *          0.5.2: Fix local plugin directory creation
+ *          0.5.3: Delete folder accidentally created with version 0.5.1 when trying to write jar file
  *
  */
 
 def customUrl = "" //insert URL between quotes or set to "" (empty) to ask the user on the 1st run, don't comment out
-autoLaunch = false // true for <application_startup> folder, false for the regular scripts folder
+autoLaunch = true // true for <application_startup> folder, false for the regular scripts folder
 removeExtraPlugins = true // true if the script should try to remove jar files in <install_folder>/plugins
 deletePlugVerbose = true // true to list the plugins in the read-only folder which the script couldn't remove
 
@@ -266,7 +269,7 @@ delDir = {
 /**
  * Upgrade plugins in installDir from tmpDir
  */
-upgradePlugings = { File tmpDir, File installDir ->
+upgradePlugins = { File tmpDir, File installDir ->
 
     def deleteList = []
     def installList = []
@@ -314,6 +317,10 @@ upgradePlugings = { File tmpDir, File installDir ->
     installList.forEach({ File f ->
         def relPath = tmpDir.toPath().relativize(f.toPath())
         def newFile = installDir.toPath().resolve(relPath).toFile()
+		if (newFile.exists() && newFile.isDirectory()) {
+			console.println "Trying to delete folder " + newFile
+			FileUtils.deleteDirectory(newFile)
+		}
         newFile.getParentFile().mkdirs()
         FileUtils.moveFile(f, newFile)
     })
@@ -372,7 +379,7 @@ progGUI =  sb.frame(
 )
 
 frameText = new JLabel(
-    text: "<html><p align=\"center\"><b>Please wait for OmegaT customisation bundle update to finish.<br/>Do not close this window.</b></p></html>"
+    text: "<html><p align=\"center\"><b> Please wait for OmegaT customisation bundle update to finish.<br/>Do not close this window.</b></p></html>"
 )
 c.fill = GBC.BOTH
 c.anchor = GBC.PAGE_START
@@ -392,7 +399,7 @@ c.gridy = 1
 //c.gridwidth = 3
 c.ipadx=340
 c.ipady=0
-progGUI.add(pb, c)    
+progGUI.add(pb, c)
 
 frameProgress = new JLabel(
     text: "OmegaT customisation bundle is being updated.\nPlease wait",
@@ -554,7 +561,7 @@ if (update != 0) {
   <preference version="1.0">
 """
                 localMap.each {
-                    localMap[it.key] = utils.makeValidXML(it.value) 
+                    localMap[it.key] = utils.makeValidXML(it.value)
                     writePref += "    <${it.key}>${it.value}</${it.key}>\n"
                 }
                 writePref += """  </preference>
@@ -633,7 +640,7 @@ This customisation update will copy all the installed scripts into $newScriptsDi
             if (setScriptsFolder == 2) {
                 delDir(scriptsDir)
             }
-            logEcho("Scripts folder is set to \n  ${newScriptsDir}.")
+            logEcho("Scripts folder is set to ${newScriptsDir}.")
         }
         FileUtils.copyDirectory(tmpScriptsDir, newScriptsDir)
         logEcho("Scripts provided in the customisation bundle copied to $newScriptsDir.")
@@ -753,7 +760,7 @@ The newer versions of these files will be installed into user's configuration fo
             confPlugDir.mkdirs()
         }
 
-        upgradePlugings(tmpPluginsDir, confPlugDir)
+        upgradePlugins(tmpPluginsDir, confPlugDir)
 
         finalMsg += "\nYour plugins have been updated."
         frameProgress.setText("Plugins updated.")
