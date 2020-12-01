@@ -317,10 +317,9 @@ upgradePlugins = { File tmpDir, File installDir ->
     installList.forEach({ File f ->
         def relPath = tmpDir.toPath().relativize(f.toPath())
         def newFile = installDir.toPath().resolve(relPath).toFile()
-		if (newFile.exists() && newFile.isDirectory()) {
-			console.println "Trying to delete folder " + newFile
-			FileUtils.deleteDirectory(newFile)
-		}
+        if (newFile.exists() && newFile.isDirectory()) {
+            FileUtils.deleteDirectory(newFile)
+        }
         newFile.getParentFile().mkdirs()
         FileUtils.moveFile(f, newFile)
     })
